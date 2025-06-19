@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Getränke Bestellung</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    display: flex;
+    margin: 20px;
+  }
+  .container {
+    display: flex;
+  }
+  .buttons-section, .receipt-section {
+    margin-right: 40px;
+  }
+  .buttons-section h2 {
+    margin-bottom: 10px;
+  }
+  /* Anzahl Buttons grün */
+  #quantityButtons {
+    display: flex;
+    gap: 5px;
+    margin-bottom: 15px;
+  }
+  #quantityButtons button {
+    width: 35px;
+    height: 35px;
+    font-size: 14px;
+    cursor: pointer;
+    background-color: #4CAF50; /* grün */
+    color: white;
+    border: none;
+    border-radius: 4px;
+  }
+  /* Getränke Buttons pink */
+  .drink-buttons button {
+    display: block;
+    margin: 5px 0;
+    width: 150px;
+    padding: 8px;
+    font-size: 14px;
+    cursor: pointer;
+    background-color: #ff69b4; /* rosa/pink */
+    color: white;
+    border: none;
+    border-radius: 4px;
+  }
+  /* Pfand Button gelb */
+  #pfandButton {
+    display: block;
+    margin: 5px 0;
+    width: 150px;
+    padding: 8px;
+    font-size: 14px;
+    cursor: pointer;
+    background-color: #ffeb3b; /* gelb */
+    border: none;
+    border-radius: 4px;
+  }
+  /* Neue Löschen Button */
+  #clearAllButton {
+    display: block;
+    margin-top: 15px;
+    width: 150px;
+    padding: 8px;
+    font-size: 14px;
+    cursor: pointer;
+    background-color: #f44336; /* rot */
+    color: white;
+    border: none;
+    border-radius: 4px;
+  }
+  #receipt {
+    width: 300px;
+    height: 400px;
+    border: 1px solid #ccc;
+    padding: 10px;
+    overflow-y: auto;
+    background-color: #f9f9f9;
+  }
+  #receipt ul {
+    list-style: none;
+    padding: 0;
+  }
+  #receipt li {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 5px;
+  }
+  #total {
+    font-weight: bold;
+    margin-top: 10px;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="buttons-section">
+    <h2>Anzahl auswählen</h2>
+    <div id="quantityButtons">
+      <!-- Buttons 1-10 -->
+      <button data-quantity="1">1</button>
+      <button data-quantity="2">2</button>
+      <button data-quantity="3">3</button>
+      <button data-quantity="4">4</button>
+      <button data-quantity="5">5</button>
+      <button data-quantity="6">6</button>
+      <button data-quantity="7">7</button>
+      <button data-quantity="8">8</button>
+      <button data-quantity="9">9</button>
+      <button data-quantity="10">10</button>
+    </div>
+    <h2>Getränke auswählen</h2>
+    <div class="drink-buttons">
+      <button data-name="Bier" data-price="3.00">Bier (€3,00)</button>
+      <button data-name="Softdrink" data-price="2.00">Softdrink (€2,00)</button>
+      <button data-name="Wasser" data-price="1.50">Wasser (€1,50)</button>
+      <button data-name="Sektglas" data-price="3.50">Sektglas (€3,50)</button>
+      <button data-name="Sektflasche" data-price="7.00">Sektflasche (€7,00)</button>
+      <button data-name="Schnaps" data-price="2.00">Schnaps (€2,00)</button>
+      <button data-name="Energy" data-price="3.00">Energy (€3,00)</button>
+    </div>
+    <button id="pfandButton">Pfand (€2,00)</button>
+    <!-- Kein Hinzufügen Button -->
+    <button id="calculateButton" style="margin-top:10px;">Gesamt berechnen</button>
+    <!-- Neuer Button zum Löschen der gesamten Bestellung -->
+    <button id="clearAllButton">Alle löschen</button>
+  </div>
+  <div class="receipt-section">
+    <h2>Kassenzettel</h2>
+    <div id="receipt">
+      <ul id="itemsList"></ul>
+    </div>
+    <div id="total">Summe: €0.00</div>
+  </div>
+</div>
+
+<script>
+  let selectedQuantity = 1; // Standard
+  const items = [];
+  const itemsList = document.getElementById('itemsList');
+  const totalDiv = document.getElementById('total');
+
+  // Funktion zum Aktualisieren der Summe
+  function updateTotal() {
+    let sum = 0;
+    items.forEach(li => {
+      const text = li.firstChild.textContent; // z.B. "Bier x2 - €6.00"
+      const priceMatch = text.match(/€([\d.,]+)$/);
+      if (priceMatch) {
+        sum += parseFloat(priceMatch[1].replace(',', '.'));
+      }
+    });
+    totalDiv.textContent = 'Summe: €' + sum.toFixed(2);
+  }
+
+  // Anzahl Buttons Event
+  document.querySelectorAll('#quantityButtons button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      selectedQuantity = parseInt(btn.dataset.quantity);
+      // Hervorhebung
+      document.querySelectorAll('#quantityButtons button').forEach(b => b.style.backgroundColor = '#4CAF50');
+      btn.style.backgroundColor = '#388E3C'; // dunkleres Grün
+    });
+  });
+
+  // Getränk Buttons - sofort auf Kassenzettel
+  document.querySelectorAll('.drink-buttons button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const name = btn.dataset.name;
+      const price = parseFloat(btn.dataset.price);
+      addItemToReceipt(name, price, selectedQuantity);
+      updateTotal();
+    });
+  });
+
+  // Pfand Button
+  document.getElementById('pfandButton').addEventListener('click', () => {
+    const name = 'Pfand';
+    const price = 2.00;
+    addItemToReceipt(name, price, selectedQuantity);
+    updateTotal();
+  });
+
+  // Löschen aller Bestellung
+  document.getElementById('clearAllButton').addEventListener('click', () => {
+    items.length = 0;
+    itemsList.innerHTML = '';
+    updateTotal();
+  });
+
+  // Funktion zum Hinzufügen eines Artikels
+  function addItemToReceipt(name, price, quantity) {
+    const totalPrice = price * quantity;
+    const itemText = `${name} x${quantity} - €${totalPrice.toFixed(2)}`;
+    const li = document.createElement('li');
+    li.textContent = itemText;
+    // Löschen Button pro Posten
+    const deleteBtn = document.createElement('button');
+    deleteBtn.textContent = 'Löschen';
+    deleteBtn.style.marginLeft = '10px';
+    deleteBtn.onclick = () => {
+      items.splice(items.indexOf(li), 1);
+      itemsList.removeChild(li);
+      updateTotal();
+    };
+    li.appendChild(deleteBtn);
+    items.push(li);
+    itemsList.appendChild(li);
+  }
+</script>
+</body>
+</html>
